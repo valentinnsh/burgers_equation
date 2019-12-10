@@ -39,7 +39,6 @@
 
 # Images
 *.png
-*.pdf
 # documents
 *.docx
 *.doc
