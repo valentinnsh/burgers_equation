@@ -1,0 +1,14 @@
+> 
+;
+# 
+# 
+> with(PDETools);
+> with(ODETools);
+> with(plots);
+> PDE := diff(u(t, x), t) + u(t, x)*diff(u(t, x), x) - n*diff(u(t, x), x, x) = 0;
+> phi := (t, x) -> exp(-1/4*(x - 4*t)^2/(n*(t + 1))) + exp(-1/4*(x - 4*t - 2*Pi)^2/(n*(t + 1)));
+> accurate := (t, x) -> -2*n*diff(phi(t, x), x)/phi(t, x) + 4;
+> u := (t, x) -> accurate;
+> PDE1 := PDE;
+> 
+;

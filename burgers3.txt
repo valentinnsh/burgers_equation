@@ -1,0 +1,48 @@
+>                        with(ArrayTools):
+> N := 1000;
+> dx := 2*Pi/N;
+> dt := 0.00025;
+> nu := 0.05;
+> x := RegularArray(0 .. 2*Pi - dx, delta = dx);
+> t := RegularArray(0 .. 0.5, delta = dt);
+> phi := (t, x) -> exp(-1/4*(x - 4*t)^2/(nu*(t + 1))) + exp(-1/4*(x - 4*t - 2*Pi)^2/(nu*(t + 1)));
+> dphi := (t, x) -> -10*(exp(-5*(x - 4*t)^2/(t + 1))*(x - 4*t) + exp(-5*(x - 4*t - 2*Pi)^2/(t + 1))*(x - 4*t - 2*Pi))/(t + 1);
+> accurate := (t, x) -> -2*nu*dphi(t, x)/phi(t, x) + 4;
+> FDM := proc(ui::Matrix)::Matrix; local u0, u1, u2; u0 := ui(1 .. -3); u1 := ui(2 .. -2); u2 := ui(3 .. -1); return u1 + `*`~(dt, -`*`~(u1, u1 - u0)/dx + `*`~(nu, u2 - `*`~(2, u1) + u0)/dx^2); end proc;
+> t_size := Size(t)(2);
+> x_size := Size(x)(2);
+> ufdm := Matrix(t_size, x_size);
+> ufdm(1, 1 .. x_size) := map(accurate, zip((a, b) -> (a, b), Array(1 .. x_size), x));
+> ufdm(1 .. t_size, 1) := map(accurate, zip((a, b) -> (a, b), t, Array(1 .. t_size, x(1))));
+> ufdm(1 .. t_size, x_size) := map(accurate, zip((a, b) -> (a, b), t, Array(1 .. t_size, x(x_size))));
+> for i from 2 to t_size do
+>     ufdm(i, 2 .. -2) := FDM(ufdm(i - 1, 1 .. x_size));
+> end do;
+> a := Matrix(1, 10, [$ (1 .. 10)]);
+> MSE := proc(a::Matrix, b::Matrix)::Matrix; local temp, i; temp := `~`[`^`](`-`~(a, b), ` $`, 2); return add(temp(i), i = 1 .. Size(temp)(2))/Size(temp)(2); end proc;
+> b := Matrix(1, 10, [$ (0 .. 9)]);
+> u_prec := Matrix(t_size, x_size);
+> u_prec(1, 1 .. x_size) := map(accurate, zip((a, b) -> (a, b), Array(1 .. x_size), x));
+> for i from 2 to t_size do
+>     u_prec(i, 1 .. -1) := map(accurate, zip((a, b) -> (a, b), Array(1 .. x_size, t[i]), x));
+> end do;
+> errors := Array(1 .. t_size);
+> for i from 2 to t_size do
+>     errors(i) := MSE(ufdm(i, 1 .. -1), u_prec(i, 1 .. -1));
+> end do;
+> MSE(ufdm(-1, 1 .. -1), u_prec(-1, 1 .. -1));
+> y1 := convert(ufdm(1, 1 .. -1), Vector);
+> y2 := convert(ufdm(400, 1 .. -1), Vector);
+> y3 := convert(ufdm(800, 1 .. -1), Vector);
+> y4 := convert(ufdm(1200, 1 .. -1), Vector);
+> y5 := convert(ufdm(1600, 1 .. -1), Vector);
+> y := [y1, y2, y3, y4, y5];
+> z1 := convert(u_prec(1, 1 .. -1), Vector);
+> z2 := convert(u_prec(400, 1 .. -1), Vector);
+> z3 := convert(u_prec(800, 1 .. -1), Vector);
+> z4 := convert(u_prec(1200, 1 .. -1), Vector);
+> z5 := convert(u_prec(1600, 1 .. -1), Vector);
+> z := [z1, z2, z3, z4, z5];
+# 
+> dataplot(x, [op(y), op(z)], style = line, linestyle = [solid, solid, solid, solid, solid, dash, dash, dash, dash, dash]);
+# 
